@@ -8,8 +8,12 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.params.HttpClientParams;
+import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpParams;
 
 /**
  * @author Benjamin Neff
@@ -20,10 +24,12 @@ public class DiasporaClientImpl implements DiasporaClient {
 
 	private final HttpClient session;
 
-	DiasporaClientImpl(final String podUrl) {
+	DiasporaClientImpl(final String podUrl, final ClientConnectionManager cm) {
 		this.podUrl = podUrl;
 
-		session = new DefaultHttpClient();
+		final HttpParams httpParams = new BasicHttpParams();
+		HttpClientParams.setRedirecting(httpParams, false);
+		session = new DefaultHttpClient(cm, httpParams);
 	}
 
 	@Override

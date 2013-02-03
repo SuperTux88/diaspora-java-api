@@ -52,12 +52,12 @@ public class DiasporaClientImpl implements DiasporaClient {
 			signInRequest.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 
 			final HttpResponse response = session.execute(signInRequest);
+			response.getEntity().consumeContent();
 
 			return response.getStatusLine().getStatusCode() == 302;
 		} catch (final Exception e) {
+			signInRequest.abort();
 			e.printStackTrace();
-		} finally {
-			signInRequest.releaseConnection();
 		}
 		return false;
 	}
@@ -82,13 +82,13 @@ public class DiasporaClientImpl implements DiasporaClient {
 						final JSONObject aspect = aspects.getJSONObject(i);
 						aspectMap.put(aspect.getInt("id"), aspect.getString("name"));
 					}
+					response.getEntity().consumeContent();
 					return aspectMap;
 				}
 			}
 		} catch (final Exception e) {
+			aspectsRequest.abort();
 			e.printStackTrace();
-		} finally {
-			aspectsRequest.releaseConnection();
 		}
 		return null;
 	}

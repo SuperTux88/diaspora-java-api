@@ -35,14 +35,14 @@ public class ClientFactory {
 	public static DiasporaClient createDiasporaClient(final String podUrl, final boolean ignoreSSL) {
 		if (ignoreSSL) {
 			final SchemeRegistry schemeRegistry = new SchemeRegistry();
-			schemeRegistry.register(new Scheme("http", 80, PlainSocketFactory.getSocketFactory()));
+			schemeRegistry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
 			try {
-				schemeRegistry.register(new Scheme("https", 443, new MockSSLSocketFactory()));
+				schemeRegistry.register(new Scheme("https", new MockSSLSocketFactory(), 443));
 			} catch (final Exception e) {
 				throw new IllegalStateException("could not create ssl socket factory", e);
 			}
 
-			final ClientConnectionManager cm = new SingleClientConnManager(schemeRegistry);
+			final ClientConnectionManager cm = new SingleClientConnManager(null, schemeRegistry);
 
 			return new DiasporaClientImpl(podUrl, cm);
 		}

@@ -9,10 +9,11 @@ public class DiasporaClientSandbox {
 		final DiasporaClient client = ClientFactory.createDiasporaClient("http://localhost:3000");
 
 		System.out.println("aspects: " + client.getAspects());
+		System.out.println("token: " + client.post("test", "public"));
 
 		System.out.println("login successful: " + client.login("api", "apitest"));
 
 		System.out.println("aspects: " + client.getAspects());
-		System.out.println("aspects: " + client.getAspects());
+		System.out.println("token: " + client.post("test", "public"));
 	}
 }

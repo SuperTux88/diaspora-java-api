@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -27,6 +29,8 @@ import org.json.JSONObject;
  * @author Benjamin Neff
  */
 public class DiasporaClientImpl implements DiasporaClient {
+
+	private static final Pattern CSRF_TOKEN_REGEX = Pattern.compile("content=\"([^\"]*)\"");
 
 	private final String podUrl;
 
@@ -63,7 +67,12 @@ public class DiasporaClientImpl implements DiasporaClient {
 	}
 
 	@Override
-	public Map<Integer, String> getAspects() {
+	public String post(final String text, final String... aspects) {
+		return getCsrfToken();
+	}
+
+	@Override
+	public Map<String, String> getAspects() {
 		final HttpGet aspectsRequest = new HttpGet(podUrl + "/bookmarklet");
 
 		try {
@@ -77,13 +86,36 @@ public class DiasporaClientImpl implements DiasporaClient {
 					final String jsonString = strLine.substring(strLine.indexOf("= ") + 2);
 					final JSONObject userInfo = new JSONObject(jsonString);
 					final JSONArray aspects = userInfo.getJSONArray("aspects");
-					final Map<Integer, String> aspectMap = new HashMap<Integer, String>();
+					final Map<String, String> aspectMap = new HashMap<String, String>();
 					for (int i = 0; i < aspects.length(); ++i) {
 						final JSONObject aspect = aspects.getJSONObject(i);
-						aspectMap.put(aspect.getInt("id"), aspect.getString("name"));
+						aspectMap.put(aspect.getString("id"), aspect.getString("name"));
 					}
 					response.getEntity().consumeContent();
 					return aspectMap;
+				}
+			}
+		} catch (final Exception e) {
+			aspectsRequest.abort();
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	private String getCsrfToken() {
+		final HttpGet aspectsRequest = new HttpGet(podUrl + "/bookmarklet");
+
+		try {
+			final HttpResponse response = session.execute(aspectsRequest);
+			final InputStream content = response.getEntity().getContent();
+			final BufferedReader br = new BufferedReader(new InputStreamReader(content));
+
+			String strLine;
+			while ((strLine = br.readLine()) != null) {
+				if (strLine.contains("csrf-token")) {
+					response.getEntity().consumeContent();
+					final Matcher csrfMatcher = CSRF_TOKEN_REGEX.matcher(strLine);
+					return csrfMatcher.find() ? csrfMatcher.group(1) : null;
 				}
 			}
 		} catch (final Exception e) {

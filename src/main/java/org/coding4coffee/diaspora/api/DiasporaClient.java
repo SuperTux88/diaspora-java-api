@@ -19,10 +19,21 @@ public interface DiasporaClient {
 	boolean login(String username, String password);
 
 	/**
+	 * Post.
+	 * 
+	 * @param text
+	 *            the text
+	 * @param aspects
+	 *            the aspects
+	 * @return the post guid
+	 */
+	String post(String text, String... aspects);
+
+	/**
 	 * Gets the aspects.
 	 * 
 	 * @return the aspects
 	 */
-	Map<Integer, String> getAspects();
+	Map<String, String> getAspects();
 
 }

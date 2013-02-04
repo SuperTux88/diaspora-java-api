@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,10 +20,12 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.params.HttpClientParams;
 import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
+import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -67,8 +71,37 @@ public class DiasporaClientImpl implements DiasporaClient {
 	}
 
 	@Override
-	public String post(final String text, final String... aspects) {
-		return getCsrfToken();
+	public String post(final String text, final String aspect) {
+		return post(text, Arrays.asList(new String[] { aspect }));
+	}
+
+	@Override
+	public String post(final String text, final Collection<String> aspects) {
+		final HttpPost postRequest = new HttpPost(podUrl + "/status_messages");
+
+		try {
+			postRequest.addHeader("content-type", "application/json");
+			postRequest.addHeader("accept", "application/json");
+			postRequest.addHeader("X-CSRF-Token", getCsrfToken());
+
+			final JSONObject post = new JSONObject();
+			post.put("status_message", new JSONObject().put("text", text));
+			post.put("aspect_ids", new JSONArray(aspects));
+
+			postRequest.setEntity(new StringEntity(post.toString()));
+
+			final HttpResponse response = session.execute(postRequest);
+			if (response.getStatusLine().getStatusCode() == 201) {
+				final JSONObject postInfo = new JSONObject(EntityUtils.toString(response.getEntity()));
+				return postInfo.getString("guid");
+			} else {
+				response.getEntity().consumeContent();
+			}
+		} catch (final Exception e) {
+			postRequest.abort();
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 	@Override

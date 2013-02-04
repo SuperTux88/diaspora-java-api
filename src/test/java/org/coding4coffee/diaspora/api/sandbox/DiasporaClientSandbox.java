@@ -1,5 +1,7 @@
 package org.coding4coffee.diaspora.api.sandbox;
 
+import java.util.Arrays;
+
 import org.coding4coffee.diaspora.api.ClientFactory;
 import org.coding4coffee.diaspora.api.DiasporaClient;
 
@@ -9,11 +11,13 @@ public class DiasporaClientSandbox {
 		final DiasporaClient client = ClientFactory.createDiasporaClient("http://localhost:3000");
 
 		System.out.println("aspects: " + client.getAspects());
-		System.out.println("token: " + client.post("test", "public"));
+		System.out.println("post id: " + client.post("test", "public"));
 
 		System.out.println("login successful: " + client.login("api", "apitest"));
 
 		System.out.println("aspects: " + client.getAspects());
-		System.out.println("token: " + client.post("test", "public"));
+		System.out.println("post id: " + client.post("test 123", "public"));
+		System.out.println("post id: " + client.post("test 1234", "all_aspects"));
+		System.out.println("post id: " + client.post("test 12345", Arrays.asList(new String[] { "21", "22" })));
 	}
 }

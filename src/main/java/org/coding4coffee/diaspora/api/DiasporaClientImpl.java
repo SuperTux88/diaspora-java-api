@@ -1,6 +1,7 @@
 package org.coding4coffee.diaspora.api;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -14,6 +15,7 @@ import java.util.regex.Pattern;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
+import org.apache.http.ParseException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
@@ -26,7 +28,12 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.util.EntityUtils;
+import org.coding4coffee.diaspora.api.exceptions.AspectsNotFoundException;
+import org.coding4coffee.diaspora.api.exceptions.CsrfTokenNotFoundException;
+import org.coding4coffee.diaspora.api.exceptions.PodFailureException;
+import org.coding4coffee.diaspora.api.exceptions.PostingException;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -49,7 +56,7 @@ public class DiasporaClientImpl implements DiasporaClient {
 	}
 
 	@Override
-	public boolean login(final String username, final String password) {
+	public boolean login(final String username, final String password) throws IOException {
 		final HttpPost signInRequest = new HttpPost(podUrl + "/users/sign_in");
 
 		try {
@@ -67,28 +74,29 @@ public class DiasporaClientImpl implements DiasporaClient {
 
 			// successful if redirect to startpage
 			return response.getStatusLine().getStatusCode() == 302;
-		} catch (final Exception e) {
+		} catch (final IOException e) {
 			// reset http connection
 			signInRequest.abort();
-			e.printStackTrace();
+			throw e;
 		}
-		return false;
 	}
 
 	@Override
-	public String post(final String text, final String aspect) {
-		return post(text, Arrays.asList(new String[] { aspect }));
+	public String createPost(final String text, final String aspect) throws IOException, PodFailureException {
+		return createPost(text, Arrays.asList(new String[] { aspect }));
 	}
 
 	@Override
-	public String post(final String text, final Collection<String> aspects) {
+	public String createPost(final String text, final Collection<String> aspects) throws IOException,
+			PodFailureException {
 		final HttpPost postRequest = new HttpPost(podUrl + "/status_messages");
+		final String csrfToken = getCsrfToken(); // get CSRF token
 
 		try {
 			// add header
 			postRequest.addHeader("content-type", "application/json");
 			postRequest.addHeader("accept", "application/json");
-			postRequest.addHeader("X-CSRF-Token", getCsrfToken());
+			postRequest.addHeader("X-CSRF-Token", csrfToken);
 
 			// build json with post data
 			final JSONObject post = new JSONObject();
@@ -104,19 +112,28 @@ public class DiasporaClientImpl implements DiasporaClient {
 				// get guid
 				final JSONObject postInfo = new JSONObject(EntityUtils.toString(response.getEntity()));
 				return postInfo.getString("guid");
-			} else { // ignore content if not successful
-				response.getEntity().consumeContent();
 			}
-		} catch (final Exception e) {
+			// ignore content if not successful
+			response.getEntity().consumeContent();
+			throw new PostingException(
+					"Error while creating the post!  Not logged in or diaspora behavior has changed.");
+		} catch (final IOException e) {
 			// reset http connection
 			postRequest.abort();
-			e.printStackTrace();
+			throw e;
+		} catch (final ParseException e) {
+			// reset http connection
+			postRequest.abort();
+			throw new IOException(e);
+		} catch (final JSONException e) {
+			// reset http connection
+			postRequest.abort();
+			throw new PodFailureException(e);
 		}
-		return null;
 	}
 
 	@Override
-	public Map<String, String> getAspects() {
+	public Map<String, String> getAspects() throws IOException, PodFailureException {
 		final HttpGet aspectsRequest = new HttpGet(podUrl + "/bookmarklet");
 
 		try {
@@ -148,15 +165,20 @@ public class DiasporaClientImpl implements DiasporaClient {
 					return aspectMap;
 				}
 			}
-		} catch (final Exception e) {
+			throw new AspectsNotFoundException(
+					"No user attributes found in response! Not logged in or diaspora behavior has changed.");
+		} catch (final IOException e) {
 			// reset http connection
 			aspectsRequest.abort();
-			e.printStackTrace();
+			throw e;
+		} catch (final JSONException e) {
+			// reset http connection
+			aspectsRequest.abort();
+			throw new PodFailureException(e);
 		}
-		return null;
 	}
 
-	private String getCsrfToken() {
+	private String getCsrfToken() throws IOException, PodFailureException {
 		final HttpGet aspectsRequest = new HttpGet(podUrl + "/bookmarklet");
 
 		try {
@@ -173,14 +195,18 @@ public class DiasporaClientImpl implements DiasporaClient {
 					// skip the rest of the content
 					response.getEntity().consumeContent();
 					final Matcher csrfMatcher = CSRF_TOKEN_REGEX.matcher(strLine);
-					return csrfMatcher.find() ? csrfMatcher.group(1) : null;
+					if (csrfMatcher.find()) {
+						return csrfMatcher.group(1);
+					}
+					break;
 				}
 			}
-		} catch (final Exception e) {
+			throw new CsrfTokenNotFoundException(
+					"CSRF-Token couldn't be found! Not logged in or diaspora behavior has changed.");
+		} catch (final IOException e) {
 			// reset http connection
 			aspectsRequest.abort();
-			e.printStackTrace();
+			throw e;
 		}
-		return null;
 	}
 }

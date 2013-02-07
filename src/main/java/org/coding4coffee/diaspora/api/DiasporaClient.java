@@ -1,7 +1,10 @@
 package org.coding4coffee.diaspora.api;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
+
+import org.coding4coffee.diaspora.api.exceptions.PodFailureException;
 
 /**
  * @author Benjamin Neff
@@ -16,30 +19,40 @@ public interface DiasporaClient {
 	 * @param password
 	 *            the password
 	 * @return true, if successful
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred. (Network error)
 	 */
-	boolean login(String username, String password);
+	boolean login(String username, String password) throws IOException;
 
 	/**
-	 * Post.
+	 * Create a new post.
 	 * 
 	 * @param text
 	 *            the text
 	 * @param aspect
-	 *            the aspect: public, all_aspects or ID
-	 * @return the post guid (null, if not successful)
+	 *            the aspect: "public", "all_aspects" or ID
+	 * @return the post guid
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred. (Network error)
+	 * @throws PodFailureException
+	 *             Errors while parsing the response from the pod
 	 */
-	String post(String text, final String aspect);
+	String createPost(String text, final String aspect) throws IOException, PodFailureException;
 
 	/**
-	 * Post.
+	 * Create a new post.
 	 * 
 	 * @param text
 	 *            the text
 	 * @param aspects
 	 *            the aspects: list with IDs
-	 * @return the post guid (null, if not successful)
+	 * @return the post guid
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred. (Network error)
+	 * @throws PodFailureException
+	 *             Errors while parsing the response from the pod
 	 */
-	String post(String text, final Collection<String> aspects);
+	String createPost(String text, final Collection<String> aspects) throws IOException, PodFailureException;
 
 	/**
 	 * Gets the aspects.
@@ -47,7 +60,11 @@ public interface DiasporaClient {
 	 * @return the aspects:<br>
 	 *         <b>key</b>: ID<br>
 	 *         <b>value</b>: name
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred. (Network error)
+	 * @throws PodFailureException
+	 *             Errors while parsing the response from the pod
 	 */
-	Map<String, String> getAspects();
+	Map<String, String> getAspects() throws IOException, PodFailureException;
 
 }

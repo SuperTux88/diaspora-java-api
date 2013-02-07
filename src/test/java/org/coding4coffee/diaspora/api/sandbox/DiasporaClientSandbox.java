@@ -11,14 +11,23 @@ public class DiasporaClientSandbox {
 	public static void main(final String[] args) throws Exception {
 		final DiasporaClient client = ClientFactory.createDiasporaClient("http://localhost:3000");
 
-		System.out.println("aspects: " + client.getAspects());
-		System.out.println("post id: " + client.post("test", "public"));
+		try {
+			System.out.println("aspects: " + client.getAspects());
+		} catch (final Exception e) {
+			e.printStackTrace();
+		}
+		try {
+			System.out.println("post id: " + client.createPost("test", "public"));
+		} catch (final Exception e) {
+			e.printStackTrace();
+		}
 
+		System.out.println("login successful: " + client.login("api", "wrongPW"));
 		System.out.println("login successful: " + client.login("api", "apitest"));
 
 		System.out.println("aspects: " + client.getAspects());
-		System.out.println("post id: " + client.post("test 123", AspectConstants.PUBLIC));
-		System.out.println("post id: " + client.post("test 1234", AspectConstants.ALL_ASPECTS));
-		System.out.println("post id: " + client.post("test 12345", Arrays.asList(new String[] { "21", "22" })));
+		System.out.println("post id: " + client.createPost("test 123", AspectConstants.PUBLIC));
+		System.out.println("post id: " + client.createPost("test 1234", AspectConstants.ALL_ASPECTS));
+		System.out.println("post id: " + client.createPost("test 12345", Arrays.asList(new String[] { "21", "22" })));
 	}
 }

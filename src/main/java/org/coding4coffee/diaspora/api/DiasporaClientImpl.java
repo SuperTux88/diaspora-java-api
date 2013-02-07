@@ -30,6 +30,7 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.util.EntityUtils;
 import org.coding4coffee.diaspora.api.exceptions.AspectsNotFoundException;
 import org.coding4coffee.diaspora.api.exceptions.CsrfTokenNotFoundException;
+import org.coding4coffee.diaspora.api.exceptions.NotLoggedInException;
 import org.coding4coffee.diaspora.api.exceptions.PodFailureException;
 import org.coding4coffee.diaspora.api.exceptions.PostingException;
 import org.json.JSONArray;
@@ -73,7 +74,7 @@ public class DiasporaClientImpl implements DiasporaClient {
 			response.getEntity().consumeContent();
 
 			// successful if redirect to startpage
-			return response.getStatusLine().getStatusCode() == 302;
+			return isRedirected(response);
 		} catch (final IOException e) {
 			// reset http connection
 			signInRequest.abort();
@@ -89,8 +90,10 @@ public class DiasporaClientImpl implements DiasporaClient {
 	@Override
 	public String createPost(final String text, final Collection<String> aspects) throws IOException,
 			PodFailureException {
+		// get CSRF token (and check if logged in)
+		final String csrfToken = getCsrfToken();
+
 		final HttpPost postRequest = new HttpPost(podUrl + "/status_messages");
-		final String csrfToken = getCsrfToken(); // get CSRF token
 
 		try {
 			// add header
@@ -115,8 +118,7 @@ public class DiasporaClientImpl implements DiasporaClient {
 			}
 			// ignore content if not successful
 			response.getEntity().consumeContent();
-			throw new PostingException(
-					"Error while creating the post!  Not logged in or diaspora behavior has changed.");
+			throw new PostingException("Error while creating the post! Probably the diaspora behavior has changed.");
 		} catch (final IOException e) {
 			// reset http connection
 			postRequest.abort();
@@ -165,8 +167,8 @@ public class DiasporaClientImpl implements DiasporaClient {
 					return aspectMap;
 				}
 			}
-			throw new AspectsNotFoundException(
-					"No user attributes found in response! Not logged in or diaspora behavior has changed.");
+			throw isRedirected(response) ? new NotLoggedInException("Not logged in!") : new AspectsNotFoundException(
+					"No user attributes found in response! Probably the diaspora behavior has changed.");
 		} catch (final IOException e) {
 			// reset http connection
 			aspectsRequest.abort();
@@ -201,12 +203,16 @@ public class DiasporaClientImpl implements DiasporaClient {
 					break;
 				}
 			}
-			throw new CsrfTokenNotFoundException(
-					"CSRF-Token couldn't be found! Not logged in or diaspora behavior has changed.");
+			throw isRedirected(response) ? new NotLoggedInException("Not logged in!") : new CsrfTokenNotFoundException(
+					"CSRF-Token couldn't be found! Probably the diaspora behavior has changed.");
 		} catch (final IOException e) {
 			// reset http connection
 			aspectsRequest.abort();
 			throw e;
 		}
+	}
+
+	private boolean isRedirected(final HttpResponse response) {
+		return response.getStatusLine().getStatusCode() == 302;
 	}
 }

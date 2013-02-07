@@ -53,17 +53,22 @@ public class DiasporaClientImpl implements DiasporaClient {
 		final HttpPost signInRequest = new HttpPost(podUrl + "/users/sign_in");
 
 		try {
+			// add parameters
 			final List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
 			nameValuePairs.add(new BasicNameValuePair("user[username]", username));
 			nameValuePairs.add(new BasicNameValuePair("user[password]", password));
 			nameValuePairs.add(new BasicNameValuePair("user[remember_me]", "1"));
 			signInRequest.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 
+			// send request
 			final HttpResponse response = session.execute(signInRequest);
+			// ignore content
 			response.getEntity().consumeContent();
 
+			// successful if redirect to startpage
 			return response.getStatusLine().getStatusCode() == 302;
 		} catch (final Exception e) {
+			// reset http connection
 			signInRequest.abort();
 			e.printStackTrace();
 		}
@@ -80,24 +85,30 @@ public class DiasporaClientImpl implements DiasporaClient {
 		final HttpPost postRequest = new HttpPost(podUrl + "/status_messages");
 
 		try {
+			// add header
 			postRequest.addHeader("content-type", "application/json");
 			postRequest.addHeader("accept", "application/json");
 			postRequest.addHeader("X-CSRF-Token", getCsrfToken());
 
+			// build json with post data
 			final JSONObject post = new JSONObject();
 			post.put("status_message", new JSONObject().put("text", text));
 			post.put("aspect_ids", new JSONArray(aspects));
 
+			// add json to request
 			postRequest.setEntity(new StringEntity(post.toString()));
 
+			// send request
 			final HttpResponse response = session.execute(postRequest);
-			if (response.getStatusLine().getStatusCode() == 201) {
+			if (response.getStatusLine().getStatusCode() == 201) { // successful
+				// get guid
 				final JSONObject postInfo = new JSONObject(EntityUtils.toString(response.getEntity()));
 				return postInfo.getString("guid");
-			} else {
+			} else { // ignore content if not successful
 				response.getEntity().consumeContent();
 			}
 		} catch (final Exception e) {
+			// reset http connection
 			postRequest.abort();
 			e.printStackTrace();
 		}
@@ -109,26 +120,36 @@ public class DiasporaClientImpl implements DiasporaClient {
 		final HttpGet aspectsRequest = new HttpGet(podUrl + "/bookmarklet");
 
 		try {
+			// send request
 			final HttpResponse response = session.execute(aspectsRequest);
+			// read response
 			final InputStream content = response.getEntity().getContent();
 			final BufferedReader br = new BufferedReader(new InputStreamReader(content));
 
 			String strLine;
 			while ((strLine = br.readLine()) != null) {
+				// read until the user attributes are found
 				if (strLine.contains("window.current_user_attributes")) {
+					// get json
 					final String jsonString = strLine.substring(strLine.indexOf("= ") + 2);
+					// parse json
 					final JSONObject userInfo = new JSONObject(jsonString);
 					final JSONArray aspects = userInfo.getJSONArray("aspects");
+
 					final Map<String, String> aspectMap = new HashMap<String, String>();
 					for (int i = 0; i < aspects.length(); ++i) {
+						// read all aspects and add to map
 						final JSONObject aspect = aspects.getJSONObject(i);
 						aspectMap.put(aspect.getString("id"), aspect.getString("name"));
 					}
+
+					// skip the rest of the content
 					response.getEntity().consumeContent();
 					return aspectMap;
 				}
 			}
 		} catch (final Exception e) {
+			// reset http connection
 			aspectsRequest.abort();
 			e.printStackTrace();
 		}
@@ -139,19 +160,24 @@ public class DiasporaClientImpl implements DiasporaClient {
 		final HttpGet aspectsRequest = new HttpGet(podUrl + "/bookmarklet");
 
 		try {
+			// send request
 			final HttpResponse response = session.execute(aspectsRequest);
+			// read response
 			final InputStream content = response.getEntity().getContent();
 			final BufferedReader br = new BufferedReader(new InputStreamReader(content));
 
 			String strLine;
 			while ((strLine = br.readLine()) != null) {
+				// read until the csrf-token is found
 				if (strLine.contains("csrf-token")) {
+					// skip the rest of the content
 					response.getEntity().consumeContent();
 					final Matcher csrfMatcher = CSRF_TOKEN_REGEX.matcher(strLine);
 					return csrfMatcher.find() ? csrfMatcher.group(1) : null;
 				}
 			}
 		} catch (final Exception e) {
+			// reset http connection
 			aspectsRequest.abort();
 			e.printStackTrace();
 		}

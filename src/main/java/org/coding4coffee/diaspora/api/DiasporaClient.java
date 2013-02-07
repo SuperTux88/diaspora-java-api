@@ -25,8 +25,8 @@ public interface DiasporaClient {
 	 * @param text
 	 *            the text
 	 * @param aspect
-	 *            the aspect
-	 * @return the post guid
+	 *            the aspect: public, all_aspects or ID
+	 * @return the post guid (null, if not successful)
 	 */
 	String post(String text, final String aspect);
 
@@ -36,15 +36,17 @@ public interface DiasporaClient {
 	 * @param text
 	 *            the text
 	 * @param aspects
-	 *            the aspects
-	 * @return the post guid
+	 *            the aspects: list with IDs
+	 * @return the post guid (null, if not successful)
 	 */
 	String post(String text, final Collection<String> aspects);
 
 	/**
 	 * Gets the aspects.
 	 * 
-	 * @return the aspects
+	 * @return the aspects:<br>
+	 *         <b>key</b>: ID<br>
+	 *         <b>value</b>: name
 	 */
 	Map<String, String> getAspects();
 

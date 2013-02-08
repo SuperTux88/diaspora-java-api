@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Map;
 
 import org.coding4coffee.diaspora.api.exceptions.PodFailureException;
+import org.coding4coffee.diaspora.api.upload.ProgressListener;
 
 /**
  * @author Benjamin Neff
@@ -53,6 +54,21 @@ public interface DiasporaClient {
 	 *             Errors while parsing the response from the pod
 	 */
 	String createPost(String text, final Collection<String> aspects) throws IOException, PodFailureException;
+
+	/**
+	 * Upload photo with progress listener.
+	 * 
+	 * @param photoBytes
+	 *            the photo byte array
+	 * @param listener
+	 *            the progress listener
+	 * @return the photo guid
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred. (Network error)
+	 * @throws PodFailureException
+	 *             Errors while parsing the response from the pod
+	 */
+	String uploadPhoto(byte[] photoBytes, ProgressListener listener) throws IOException, PodFailureException;
 
 	/**
 	 * Gets the aspects.

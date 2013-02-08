@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.ParseException;
@@ -33,6 +34,8 @@ import org.coding4coffee.diaspora.api.exceptions.CsrfTokenNotFoundException;
 import org.coding4coffee.diaspora.api.exceptions.NotLoggedInException;
 import org.coding4coffee.diaspora.api.exceptions.PodFailureException;
 import org.coding4coffee.diaspora.api.exceptions.PostingException;
+import org.coding4coffee.diaspora.api.upload.ProgressByteArrayEntity;
+import org.coding4coffee.diaspora.api.upload.ProgressListener;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -130,6 +133,51 @@ public class DiasporaClientImpl implements DiasporaClient {
 		} catch (final JSONException e) {
 			// reset http connection
 			postRequest.abort();
+			throw new PodFailureException(e);
+		}
+	}
+
+	@Override
+	public String uploadPhoto(final byte[] photoBytes, final ProgressListener listener) throws IOException,
+			PodFailureException {
+		// get CSRF token (and check if logged in)
+		final String csrfToken = getCsrfToken();
+
+		final HttpPost photoRequest = new HttpPost(podUrl + "/photos?photo%5Baspect_ids%5D=all&qqfile=uploaded.jpg");
+
+		try {
+			// add header
+			photoRequest.addHeader("content-type", "application/octet-stream");
+			photoRequest.addHeader("X-CSRF-Token", csrfToken);
+
+			final HttpEntity photoEntity = new ProgressByteArrayEntity(photoBytes, listener);
+			photoRequest.setEntity(photoEntity);
+
+			// send request
+			final HttpResponse response = session.execute(photoRequest);
+			if (response.getStatusLine().getStatusCode() == 200) { // successful
+				// get guid
+				final JSONObject photoJson = new JSONObject(EntityUtils.toString(response.getEntity()));
+				final JSONObject photoData = photoJson.getJSONObject("data").getJSONObject("photo");
+				System.out.println(photoData.getJSONObject("unprocessed_image").getString("url"));
+				return photoData.getString("guid");
+			}
+			// ignore content if not successful
+			// response.getEntity().consumeContent();
+			System.out.println(EntityUtils.toString(response.getEntity()));
+			// TODO
+			throw new PodFailureException("Error while creating the post! Probably the diaspora behavior has changed.");
+		} catch (final IOException e) {
+			// reset http connection
+			photoRequest.abort();
+			throw e;
+		} catch (final ParseException e) {
+			// reset http connection
+			photoRequest.abort();
+			throw new IOException(e);
+		} catch (final JSONException e) {
+			// reset http connection
+			photoRequest.abort();
 			throw new PodFailureException(e);
 		}
 	}

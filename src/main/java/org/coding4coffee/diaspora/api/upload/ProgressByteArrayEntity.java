@@ -5,6 +5,9 @@ import java.io.OutputStream;
 
 import org.apache.http.entity.ByteArrayEntity;
 
+/**
+ * @author Benjamin Neff
+ */
 public class ProgressByteArrayEntity extends ByteArrayEntity {
 
 	private final ProgressListener listener;

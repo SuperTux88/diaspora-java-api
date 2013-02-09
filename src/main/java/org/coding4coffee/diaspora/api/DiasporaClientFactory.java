@@ -10,7 +10,7 @@ import org.coding4coffee.diaspora.api.ssl.MockSSLSocketFactory;
 /**
  * @author Benjamin Neff
  */
-public class ClientFactory {
+public class DiasporaClientFactory {
 
 	/**
 	 * Creates a new Diaspora Client.

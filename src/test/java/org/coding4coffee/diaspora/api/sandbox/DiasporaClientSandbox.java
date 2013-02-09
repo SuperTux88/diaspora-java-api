@@ -5,14 +5,14 @@ import java.util.Arrays;
 
 import org.apache.commons.io.IOUtils;
 import org.coding4coffee.diaspora.api.AspectConstants;
-import org.coding4coffee.diaspora.api.ClientFactory;
+import org.coding4coffee.diaspora.api.DiasporaClientFactory;
 import org.coding4coffee.diaspora.api.DiasporaClient;
 import org.coding4coffee.diaspora.api.upload.ProgressListener;
 
 public class DiasporaClientSandbox {
 
 	public static void main(final String[] args) throws Exception {
-		final DiasporaClient client = ClientFactory.createDiasporaClient("http://localhost:3000");
+		final DiasporaClient client = DiasporaClientFactory.createDiasporaClient("http://localhost:3000");
 
 		try {
 			System.out.println("aspects: " + client.getAspects());

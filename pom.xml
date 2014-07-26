@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.coding4coffee</groupId>
 		<artifactId>project</artifactId>
-		<version>0.6.13</version>
+		<version>0.7.1</version>
 	</parent>
 
 	<artifactId>diaspora-api</artifactId>
@@ -35,7 +35,7 @@
 		<repository>
 			<id>coding4coffee</id>
 			<name>coding4coffee Maven2 Repository</name>
-			<url>http://nexus.coding4coffee.org/content/groups/public</url>
+			<url>http://nexus.coding4.coffee/content/groups/public</url>
 			<releases>
 				<enabled>true</enabled>
 			</releases>
